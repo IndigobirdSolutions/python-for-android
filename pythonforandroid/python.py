@@ -318,6 +318,7 @@ class GuestPythonRecipe(TargetPythonRecipe):
         c_ext = self.compiled_extension
         ensure_dir(modules_dir)
         module_filens = (glob.glob(join(modules_build_dir, '*.so')) +
+                         glob.glob(join(modules_build_dir, '*.py')) +
                          glob.glob(join(modules_build_dir, '*' + c_ext)))
         info("Copy {} files into the bundle".format(len(module_filens)))
         for filen in module_filens:

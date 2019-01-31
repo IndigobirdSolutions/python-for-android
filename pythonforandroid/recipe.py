@@ -102,6 +102,8 @@ class Recipe(with_metaclass(RecipeMeta)):
 
     archs = ['armeabi']  # Not currently implemented properly
 
+    download_filename = None
+
     @property
     def version(self):
         key = 'VERSION_' + self.name
@@ -312,7 +314,10 @@ class Recipe(with_metaclass(RecipeMeta)):
         shprint(sh.mkdir, '-p', join(self.ctx.packages_path, self.name))
 
         with current_directory(join(self.ctx.packages_path, self.name)):
-            filename = shprint(sh.basename, url).stdout[:-1].decode('utf-8')
+            if self.download_filename:
+                filename = self.download_filename
+            else:
+                filename = shprint(sh.basename, url).stdout[:-1].decode('utf-8')
 
             do_download = True
             marker_filename = '.mark-{}'.format(filename)
@@ -372,12 +377,14 @@ class Recipe(with_metaclass(RecipeMeta)):
         if self.url is None:
             info('Skipping {} unpack as no URL is set'.format(self.name))
             return
-
-        filename = shprint(
-            sh.basename, self.versioned_url).stdout[:-1].decode('utf-8')
-        ma = match(u'^(.+)#md5=([0-9a-f]{32})$', filename)
-        if ma:                  # fragmented URL?
-            filename = ma.group(1)
+        if self.download_filename:
+            filename = self.download_filename
+        else:
+            filename = shprint(
+                sh.basename, self.versioned_url).stdout[:-1].decode('utf-8')
+            ma = match(u'^(.+)#md5=([0-9a-f]{32})$', filename)
+            if ma:                  # fragmented URL?
+                filename = ma.group(1)
 
         with current_directory(build_dir):
             directory_name = self.get_build_dir(arch)
@@ -899,6 +906,9 @@ class CompiledComponentsPythonRecipe(PythonRecipe):
         self.build_compiled_components(arch)
         self.install_python_package(arch)
 
+    def _get_build_dir(self):
+        return glob.glob('build/lib.*')[0]
+
     def build_compiled_components(self, arch):
         info('Building compiled components in {}'.format(self.name))
 
@@ -909,7 +919,7 @@ class CompiledComponentsPythonRecipe(PythonRecipe):
                 shprint(hostpython, 'setup.py', 'clean', '--all', _env=env)
             shprint(hostpython, 'setup.py', self.build_cmd, '-v',
                     _env=env, *self.setup_extra_args)
-            build_dir = glob.glob('build/lib.*')[0]
+            build_dir = self._get_build_dir()
             shprint(sh.find, build_dir, '-name', '"*.o"', '-exec',
                     env['STRIP'], '{}', ';', _env=env)
 

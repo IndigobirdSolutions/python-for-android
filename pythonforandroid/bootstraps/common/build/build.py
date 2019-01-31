@@ -75,7 +75,7 @@ BLACKLIST_PATTERNS = [
 ]
 # pyc/py
 if PYTHON is not None:
-    BLACKLIST_PATTERNS.append('*.py')
+    #BLACKLIST_PATTERNS.append('*.py')
     if PYTHON_VERSION and int(PYTHON_VERSION[0]) == 2:
         # we only blacklist `.pyc` for python2 because in python3 the compiled
         # extension is `.pyc` (.pyo files not exists for python >= 3.6)
